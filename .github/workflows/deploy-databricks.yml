@@ -1,5 +1,13 @@
-name: Deploy to Databricks
+# This workflow validates, deploys, and runs the specified bundle
+# within a production target named "prod".
+name: "Production deployment"
 
+# Ensure that only a single job or workflow using the same concurrency group
+# runs at a time.
+concurrency: 1
+
+# Trigger this workflow whenever a pull request is pushed to the repo's
+# main branch.
 on:
   push:
     branches:
@@ -7,34 +15,45 @@ on:
 
 jobs:
   deploy:
+    name: "Deploy bundle"
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      # Check out this repo, so that this workflow can access it.
+      - uses: actions/checkout@v3
 
-      - name: Get credentials
-        uses: leanix/secrets-action@master
-        with:
-          secret-store-credentials: ${{ secrets.INJECTED_SECRET_STORE_CREDENTIALS }}
-
-      - name: Azure login LeanIX
-        uses: azure/login@v2
-        with:
-          creds: '{
-            "clientId":"${{ secrets.SP_CLIENT_ID }}",
-            "clientSecret": "${{ secrets.SP_CLIENT_SECRET }}",
-            "subscriptionId": "${{ secrets.SP_SUBSCRIPTION_ID }}",
-            "tenantId": "${{ secrets.SP_TENANT_ID }}"
-          }'
-
+      # Download the Databricks CLI.
+      # See https://github.com/databricks/setup-cli
       - uses: databricks/setup-cli@main
 
-      - name: Validate bundle
-        working-directory: ./bundles/global
-        run: ../databricks-bundle-validate.sh --var="notification_id=${NOTIFICATION_ID}" -t global
+      # Deploy the bundle to the "prod" target as defined
+      # in the bundle's settings file.
+      - run: databricks bundle deploy
+        working-directory: .
+        env:
+          DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
+          DATABRICKS_BUNDLE_ENV: prod
 
-      - name: Deploy bundle
-        if: github.ref=='refs/heads/main'
-        working-directory: ./bundles/global
-        run: databricks bundle deploy --var="notification_id=${NOTIFICATION_ID}" -t global
+  # Validate, deploy, and then run the bundle.
+  pipeline_update:
+    name: "Run pipeline update"
+    runs-on: ubuntu-latest
 
+    # Run the "deploy" job first.
+    needs:
+      - deploy
+
+    steps:
+      # Check out this repo, so that this workflow can access it.
+      - uses: actions/checkout@v3
+
+      # Use the downloaded Databricks CLI.
+      - uses: databricks/setup-cli@main
+
+      # Run the Databricks workflow named "my-job" as defined in the
+      # bundle that was just deployed.
+      - run: databricks bundle run my-job --refresh-all
+        working-directory: .
+        env:
+          DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
+          DATABRICKS_BUNDLE_ENV: prod
