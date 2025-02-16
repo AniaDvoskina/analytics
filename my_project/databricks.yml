@@ -1,0 +1,17 @@
+bundle:
+  name: kaggle-events
+
+resources:
+  jobs:
+    send-events-to-hub:
+      name: Send Events To Hub
+      tasks:
+        - task_key: events-to-hub
+          existing_cluster_id: "0216-153450-gm1l62l6"
+          notebook_task:
+            notebook_path: /src/kaggle-events/send-events-into-hub.py
+
+targets:
+  dev:
+    workspace:
+      host: https://adb-1803686465879368.8.azuredatabricks.net
