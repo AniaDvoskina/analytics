@@ -29,7 +29,7 @@ jobs:
       # Deploy the bundle to the "prod" target as defined
       # in the bundle's settings file.
       - run: databricks bundle deploy
-        working-directory: /project
+        working-directory: ./project
         env:
           DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
           DATABRICKS_BUNDLE_ENV: prod
@@ -53,7 +53,7 @@ jobs:
       # Run the Databricks workflow named "my-job" as defined in the
       # bundle that was just deployed.
       - run: databricks bundle run my-job --refresh-all
-        working-directory:  /project
+        working-directory:  ./project
         env:
           DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
           DATABRICKS_BUNDLE_ENV: prod
