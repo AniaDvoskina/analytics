@@ -1,0 +1,40 @@
+name: Deploy to Databricks
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get credentials
+        uses: leanix/secrets-action@master
+        with:
+          secret-store-credentials: ${{ secrets.INJECTED_SECRET_STORE_CREDENTIALS }}
+
+      - name: Azure login LeanIX
+        uses: azure/login@v2
+        with:
+          creds: '{
+            "clientId":"${{ secrets.SP_CLIENT_ID }}",
+            "clientSecret": "${{ secrets.SP_CLIENT_SECRET }}",
+            "subscriptionId": "${{ secrets.SP_SUBSCRIPTION_ID }}",
+            "tenantId": "${{ secrets.SP_TENANT_ID }}"
+          }'
+
+      - uses: databricks/setup-cli@main
+
+      - name: Validate bundle
+        working-directory: ./bundles/global
+        run: ../databricks-bundle-validate.sh --var="notification_id=${NOTIFICATION_ID}" -t global
+
+      - name: Deploy bundle
+        if: github.ref=='refs/heads/main'
+        working-directory: ./bundles/global
+        run: databricks bundle deploy --var="notification_id=${NOTIFICATION_ID}" -t global
+
