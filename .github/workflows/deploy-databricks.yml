@@ -32,7 +32,7 @@ jobs:
         working-directory: ./project
         env:
           DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
-          DATABRICKS_BUNDLE_ENV: prod
+          DATABRICKS_BUNDLE_ENV: dev
 
   # Validate, deploy, and then run the bundle.
   pipeline_update:
@@ -56,4 +56,4 @@ jobs:
         working-directory:  ./project
         env:
           DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
-          DATABRICKS_BUNDLE_ENV: prod
+          DATABRICKS_BUNDLE_ENV: dev
