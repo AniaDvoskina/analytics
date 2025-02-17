@@ -48,6 +48,7 @@ json_files = [
     for blob in blob_list if blob.name.endswith(".json")
 ]
 # Load JSON files into Spark DataFrame
+
 if json_files:
     print("Loading files into Spark DataFrame...")
     df = spark.read.json(json_files, schema=main_schema)
@@ -57,10 +58,6 @@ if json_files:
     col("event_data.uuid"),
     col("event_data.user_id")
 )
-    #Keeping only rows with the not null uuid 
-    df = df.filter(col("uuid").isNotNull())
-    #Removing Duplicates by uuid assuming that all the rows with the same uuid are exactly the same 
-    df = df.drop_duplicates(["uuid"])
 
     delta_path = f"wasbs://{container_name}@{blob_service_client.account_name}.blob.core.windows.net/bronze/events"
 

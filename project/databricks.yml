@@ -17,6 +17,7 @@ resources:
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/write-events-to-raw.py
+            
         - task_key: events-to-bronze
           depends_on:
             - task_key: events-to-raw
@@ -24,6 +25,22 @@ resources:
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/write-events-to-bronze.py
+
+        - task_key: events-to-silver
+          depends_on:
+            - task_key: events-to-bronze
+          run_if: ALL_DONE
+          existing_cluster_id: "0216-153450-gm1l62l6"
+          spark_python_task:
+            python_file: ./src/write-events-to-silver.py
+
+        - task_key: events-to-gold
+          depends_on:
+            - task_key: events-to-silver
+          run_if: ALL_DONE
+          existing_cluster_id: "0216-153450-gm1l62l6"
+          spark_python_task:
+            python_file: ./src/write-events-to-gold.py
 
 targets:
   dev:
