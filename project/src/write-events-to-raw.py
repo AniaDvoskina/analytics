@@ -1,28 +1,19 @@
 from azure.storage.blob import BlobServiceClient
 import json
-from pyspark.sql import SparkSession
 from azure.eventhub import EventHubConsumerClient
-import time
 from databricks.sdk import WorkspaceClient
 from databricks.connect import DatabricksSession
-
 
 spark = DatabricksSession.builder.getOrCreate()
 dbutils= WorkspaceClient().dbutils
 
-
-# Initialize Spark session
-spark = SparkSession.builder.appName("EventHubToBlobStorage").getOrCreate()
-
-# Blob storage connection string and container name
-event_hub_connection_string = dbutils.secrets.get(scope="kaggle-project-credentials", key="event_hub_connection_string")
-event_hub_name = "product-analytics"
+# Credentials 
+event_hub_connection_string = dbutils.secrets.get(scope="kaggle-project-credentials",key="event_hub_connection_string")
+event_hub_name = "kaggleeventhub"
 blob_storage_connections_string = dbutils.secrets.get(scope="kaggle-project-credentials", key="blob_storage_connection-string")
-container_name = "analytics-pipeline"
-storage_account_name = "kaggleanalytics"
-storage_account_key = dbutils.secrets.get(scope="kaggle-project-credentials", key="blob_storage_key")
-delta_table_path = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/raw/events_delta"
-consumer_group = "$Default"  # Consumer group name
+container_name = "kaggle-pipeline"
+storage_account_name = "kaggleglobal"
+consumer_group = "$Default"  
 
 # Set up a BlobServiceClient to interact with the Blob storage
 blob_service_client = BlobServiceClient.from_connection_string(blob_storage_connections_string)
@@ -35,9 +26,17 @@ client = EventHubConsumerClient.from_connection_string(
     eventhub_name=event_hub_name
 )
 
+#Function to check if the files already laoded not to load the duplicated files 
+def file_exists(blob_name):
+    blob_client = container_client.get_blob_client(blob_name)
+    try:
+        blob_client.get_blob_properties()
+        return True 
+    except Exception as e:
+        return False 
+    
+#Function to get the  properties of the event
 def on_event(partition_context, event):
-    """Process each event and store it in a Blob."""
-    # Prepare the event data to store in the Blob.
     event_data = {
         "event_data": event.body_as_str(encoding="UTF-8"),
         "partition_id": partition_context.partition_id,
@@ -45,22 +44,24 @@ def on_event(partition_context, event):
         "sequence_number": event.sequence_number,
     }
 
-    # Convert the event data to a JSON string
+    event_timestamp = event.enqueued_time  
+    load_date = event_timestamp.strftime("%Y-%m-%d_%H-%M-%S")  #using the load date to event hub as a unique name
+
     json_data = json.dumps(event_data) + "\n"
+    sequence_number = event.sequence_number
     
-    # Create a unique blob name (use sequence number or offset for uniqueness)
-    blob_name = f"raw/event_{event.sequence_number}.json"  # Path within the "raw" folder
+    blob_name = f"raw/event_{sequence_number}_{load_date}.json"  
 
-    # Upload event data to blob storage
-    blob_client = container_client.get_blob_client(blob_name)
-    blob_client.upload_blob(json_data, overwrite=True)  # Overwrite if blob already exists
-    
-    print(f"Uploaded event {event.sequence_number} to blob {blob_name}")
+    if file_exists(blob_name):
+        print(f"File {blob_name} already exists, skipping upload.")
+    else:
+        blob_client = container_client.get_blob_client(blob_name)
+        blob_client.upload_blob(json_data)
+        print(f"Uploaded event {event.sequence_number} to blob {blob_name}")
 
+#Function to get events from the hub 
 def receive_events():
-    """Receive events from Event Hub and store them in Blob Storage."""
     try:
-        # Receive events from the Event Hub
         print("Receiving events from Event Hub...")
         client.receive(
             on_event=on_event,  # The callback function to process events
@@ -74,5 +75,4 @@ def receive_events():
         client.close()
 
 if __name__ == "__main__":
-    # Call the function to start receiving events and uploading to Blob Storage
     receive_events()
