@@ -56,12 +56,10 @@ def generate_random_user_id():
     random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
     return random_string 
 
-
 def enhance_with_uuid_and_user_id(df):
     df['uuid'] = df.apply(lambda _: str(uuid.uuid4()), axis=1)  # Adding a UUID to each row
     df['user_id'] = df.apply(lambda _: generate_random_user_id(), axis=1)  # Adding a random user ID (more random)
     return df
-
 
 json_data = get_json_from_kaggle(endpoint)
 df = pd.DataFrame(json_data) 
