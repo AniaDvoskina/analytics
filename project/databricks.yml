@@ -9,11 +9,11 @@ resources:
         - task_key: events-to-hub
           existing_cluster_id: "0216-153450-gm1l62l6"
           notebook_task:
-            notebook_path: /src/send-events-to-hub.py
+            notebook_path: ./src/send-events-to-hub.py
         - task_key: events-to-raw
           existing_cluster_id: "0216-153450-gm1l62l6"
           notebook_task:
-            notebook_path: /src/write-to-bronze.py
+            notebook_path: ./src/write-to-bronze.py
 
 
 
