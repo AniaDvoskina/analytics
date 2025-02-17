@@ -10,12 +10,13 @@ resources:
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/send-events-to-hub.py
+    write-events-to-raw:
+      name: Write Events To Raw
+      tasks:
         - task_key: events-to-raw
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/write-to-bronze.py
-
-
 
 targets:
   dev:
