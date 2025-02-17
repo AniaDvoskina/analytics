@@ -7,13 +7,16 @@ from databricks.connect import DatabricksSession
 from requests.auth import HTTPBasicAuth
 import requests
 import asyncio 
+import random
+import string 
+import uuid
 
 spark = DatabricksSession.builder.getOrCreate()
 dbutils= WorkspaceClient().dbutils
 
 #get secrets 
 event_hub_connection_string = dbutils.secrets.get(scope="kaggle-project-credentials",key="event_hub_connection_string")
-event_hub_name = "product-analytics"
+event_hub_name = "kaggleeventhub"
 kaggle_username = "annadvoskina"
 kaggle_password = dbutils.secrets.get(scope="kaggle-project-credentials",key="kaggle_password")
 
@@ -45,7 +48,22 @@ async def send_to_eventhub(df):
             await producer.send_batch(event_data_batch)
     print('Loaded in event hub successfully')
 
+import random
+import string
+
+# Function to generate a random user ID
+def generate_random_user_id():
+    random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    return random_string 
+
+
+def enhance_with_uuid_and_user_id(df):
+    df['uuid'] = df.apply(lambda _: str(uuid.uuid4()), axis=1)  # Adding a UUID to each row
+    df['user_id'] = df.apply(lambda _: generate_random_user_id(), axis=1)  # Adding a random user ID (more random)
+    return df
+
 
 json_data = get_json_from_kaggle(endpoint)
 df = pd.DataFrame(json_data) 
+df = enhance_with_uuid_and_user_id(df)
 asyncio.run(send_to_eventhub(df))   
