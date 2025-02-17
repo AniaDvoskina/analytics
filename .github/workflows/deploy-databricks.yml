@@ -34,26 +34,3 @@ jobs:
           DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
           DATABRICKS_BUNDLE_ENV: dev
 
-  # Validate, deploy, and then run the bundle.
-  pipeline_update:
-    name: "Run pipeline update"
-    runs-on: ubuntu-latest
-
-    # Run the "deploy" job first.
-    needs:
-      - deploy
-
-    steps:
-      # Check out this repo, so that this workflow can access it.
-      - uses: actions/checkout@v3
-
-      # Use the downloaded Databricks CLI.
-      - uses: databricks/setup-cli@main
-
-      # Run the Databricks workflow named "my-job" as defined in the
-      # bundle that was just deployed.
-      - run: databricks bundle run send-events-to-hub --refresh-all
-        working-directory:  ./project
-        env:
-          DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
-          DATABRICKS_BUNDLE_ENV: dev
