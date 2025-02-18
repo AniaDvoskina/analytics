@@ -32,9 +32,11 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      # Run unit tests
       - name: Run unit tests
+        env:
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}  # Pass the secret token here
         run: |
+          source .venv/bin/activate
           python -m unittest ./project/src/unit-test.py
     
   deploy:
