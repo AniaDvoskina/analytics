@@ -1,4 +1,4 @@
-name: "Dven deployment"
+name: "Dev deployment"
 
 # Ensure that only a single job or workflow using the same concurrency group
 # runs at a time.
@@ -12,8 +12,8 @@ on:
       - main
 
 jobs:
-  deploy:
-    name: "Deploy bundle"
+  test:
+    name: "Run unit tests"
     runs-on: ubuntu-latest
 
     steps:
@@ -26,20 +26,32 @@ jobs:
         with:
           python-version: '3.11'  # Specify the Python version here
 
-      # Install dependencies
-      - name: Install dependencies
+      # Install testing dependencies
+      - name: Install test dependencies
         run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install -r requirements.txt
+          pip install -r requirements-test.txt
 
       # Run unit tests
       - name: Run unit tests
         run: |
-          source .venv/bin/activate
           python -m unittest discover -s src -p "unit-test.py"
+    
+  deploy:
+    name: "Deploy bundle"
+    runs-on: ubuntu-latest
+    needs: test  
 
-      # Download the Databricks CLI.
+    steps:
+      # Check out this repo, so that this workflow can access it.
+      - uses: actions/checkout@v3
+
+      # Set up Python environment for deployment
+      - name: Set up Python for deployment
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # Download the Databricks CLI
       - uses: databricks/setup-cli@main
 
       # Deploy the bundle to the "prod" target as defined
@@ -49,4 +61,3 @@ jobs:
         env:
           DATABRICKS_TOKEN: ${{ secrets.SP_TOKEN }}
           DATABRICKS_BUNDLE_ENV: dev
-
