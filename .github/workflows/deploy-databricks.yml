@@ -1,6 +1,4 @@
-# This workflow validates, deploys, and runs the specified bundle
-# within a production target named "prod".
-name: "Production deployment"
+name: "Dven deployment"
 
 # Ensure that only a single job or workflow using the same concurrency group
 # runs at a time.
@@ -22,8 +20,26 @@ jobs:
       # Check out this repo, so that this workflow can access it.
       - uses: actions/checkout@v3
 
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'  # Specify the Python version here
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+
+      # Run unit tests
+      - name: Run unit tests
+        run: |
+          source .venv/bin/activate
+          python -m unittest discover -s src -p "unit-test.py"
+
       # Download the Databricks CLI.
-      # See https://github.com/databricks/setup-cli
       - uses: databricks/setup-cli@main
 
       # Deploy the bundle to the "prod" target as defined
