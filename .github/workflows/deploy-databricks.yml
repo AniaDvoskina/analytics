@@ -11,6 +11,9 @@ jobs:
   test:
     name: "Run unit tests"
     runs-on: ubuntu-latest
+    env:
+      DATABRICKS_HOST: "https://adb-1803686465879368.8.azuredatabricks.net/"
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
 
     steps:
       - name: Check out repository
@@ -25,12 +28,6 @@ jobs:
         working-directory: ./project
         run: |
           pip install -r requirements.txt
-
-        # Set up Databricks credentials for authentication
-      - name: Set up Databricks Authentication
-        run: |
-          echo "export DATABRICKS_TOKEN=${{ secrets.SP_TOKEN }}" >> $GITHUB_ENV
-
 
       # Run Unit Tests
       - name: Run unit tests
