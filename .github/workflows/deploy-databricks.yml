@@ -29,6 +29,7 @@ jobs:
         working-directory: ./project
         run: |
           pip install -r requirements.txt
+          pip install pyspark
 
       # Uninstall Databricks Connect to avoid conflicts
       - name: Uninstall Databricks Connect
