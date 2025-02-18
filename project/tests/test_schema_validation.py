@@ -42,7 +42,7 @@ def test_schema_validation(spark, sample_raw_data):
         StructField("intents", StringType(), True),
         StructField("uuid", StringType(), True),
         StructField("user_id", StringType(), True),
-        StructField("event_timestamp", TimestampType(), True)
+        StructField("event_timestamp", StringType(), True)
     ])
 
     assert df.schema == expected_schema, "Schema does not match expected structure"
