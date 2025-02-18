@@ -56,7 +56,7 @@ def get_main_schema():
         StructField("partition_id", StringType(), True),
         StructField("offset", StringType(), True),
         StructField("sequence_number", StringType(), True),  # Sequence number of the event
-        StructField("event_timestamp", TimestampType(), True)
+        StructField("event_timestamp", StringType(), True)
     ])
 
 # Function to initialize the Azure Blob Storage client
