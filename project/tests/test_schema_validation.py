@@ -4,10 +4,14 @@ from pyspark.sql.types import StructField, StructType, StringType, TimestampType
 from pyspark.sql.functions import col, from_json
 from project.src.write_events_to_bronze import get_main_schema, get_event_data_schema
 
-# Initialize PySpark Session for testing
+# Initialize an in-memory Spark Session for testing
 @pytest.fixture(scope="session")
 def spark():
-    return SparkSession.builder.master("local[*]").appName("test").getOrCreate()
+    return SparkSession.builder \
+        .master("local[1]") \
+        .appName("test") \
+        .config("spark.sql.warehouse.dir", "/tmp/spark-warehouse") \
+        .getOrCreate()
 
 # Sample test data (simulating raw JSON data from Azure Blob)
 @pytest.fixture
