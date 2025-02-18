@@ -29,7 +29,7 @@ jobs:
         working-directory: ./project
         run: |
           pip install -r requirements.txt
-          run: pip uninstall -y databricks-connect
+          pip uninstall -y databricks-connect
           pip uninstall -y pyspark
           pip install pyspark
         
