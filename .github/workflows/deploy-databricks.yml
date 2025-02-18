@@ -28,6 +28,7 @@ jobs:
 
       # Install testing dependencies
       - name: Install test dependencies
+        working-directory: ./project/src
         run: |
           pip install -r requirements-test.txt
 
