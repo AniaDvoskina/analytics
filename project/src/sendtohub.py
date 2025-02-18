@@ -7,22 +7,30 @@ import string
 from azure.eventhub import EventData
 from azure.eventhub.aio import EventHubProducerClient
 from databricks.sdk import WorkspaceClient
-from databricks.connect import DatabricksSession
 from requests.auth import HTTPBasicAuth
 import requests
 
-spark = DatabricksSession.builder.getOrCreate()
-dbutils = WorkspaceClient().dbutils
+# Function to initialize DatabricksSession (called when needed)
+def get_spark_session():
+    from databricks.connect import DatabricksSession
+    return DatabricksSession.builder.getOrCreate()
 
-# Retrieve credentials
-event_hub_connection_string = dbutils.secrets.get(scope="kaggle-project-credentials", key="event_hub_connection_string")
-kaggle_password = dbutils.secrets.get(scope="kaggle-project-credentials", key="kaggle_password")
-event_hub_name = "kaggleeventhub"
-kaggle_username = "annadvoskina"
+# Function to initialize dbutils (called when needed)
+def get_dbutils():
+    from databricks.sdk import WorkspaceClient
+    return WorkspaceClient().dbutils
+
+# Retrieve credentials using dbutils (now inside the function)
+def get_credentials():
+    dbutils = get_dbutils()
+    event_hub_connection_string = dbutils.secrets.get(scope="kaggle-project-credentials", key="event_hub_connection_string")
+    kaggle_password = dbutils.secrets.get(scope="kaggle-project-credentials", key="kaggle_password")
+    return event_hub_connection_string, kaggle_password
 
 # Define Kaggle API endpoint
 kaggle_endpoint = 'https://www.kaggle.com/api/v1/datasets/download/tusharpaul2001/university-chatbot-dataset/intents.json'
-login = HTTPBasicAuth(kaggle_username, kaggle_password)
+kaggle_username = "annadvoskina"
+login = HTTPBasicAuth(kaggle_username, None)  # Using password when needed
 
 # Function to retrieve JSON data from Kaggle
 def fetch_json_from_kaggle(endpoint: str, auth: HTTPBasicAuth = None) -> dict:
@@ -47,7 +55,8 @@ def enhance_dataframe_with_uuid_and_user_id(df: pd.DataFrame) -> pd.DataFrame:
 
 # Function to send data to Event Hub
 async def send_data_to_eventhub(df: pd.DataFrame):
-    producer = EventHubProducerClient.from_connection_string(event_hub_connection_string, eventhub_name=event_hub_name)
+    event_hub_connection_string, _ = get_credentials()  # Get credentials when needed
+    producer = EventHubProducerClient.from_connection_string(event_hub_connection_string, eventhub_name="kaggleeventhub")
     async with producer:
         for _, row in df.iterrows():
             event_data_batch = await producer.create_batch()
