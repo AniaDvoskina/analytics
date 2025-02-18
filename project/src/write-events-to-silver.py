@@ -56,7 +56,7 @@ def clean_data(df):
     return df.filter(col("uuid").isNotNull()).drop_duplicates(["uuid"])
 
 def write_to_silver(df, container_name, blob_service_client, delta_silver_path):
-    df.write.format("delta").mode("overwrite").save(delta_silver_path)
+    df.write.format("delta").option("mergeSchema", "true").mode("overwrite").save(delta_silver_path)
 
 # Main finction
 def process_data():
@@ -71,6 +71,7 @@ def process_data():
     df_parsed = parse_data(df, intent_schema, out_schema)
     
     df_cleaned = df_parsed.select(
+        col("event_timestamp"),
         col("uuid"),
         col("user_id"),
         col("event_data_parsed.intent").alias("intent"),

@@ -1,7 +1,7 @@
 from azure.storage.blob import BlobServiceClient
 from databricks.sdk import WorkspaceClient
 from databricks.connect import DatabricksSession
-from pyspark.sql.types import StructField, StructType, StringType
+from pyspark.sql.types import StructField, StructType, StringType, TimestampType
 from pyspark.sql.functions import col, from_json
 
 spark = DatabricksSession.builder.getOrCreate()
@@ -16,14 +16,16 @@ raw_folder_path = "raw/"
 event_data_schema = StructType([
     StructField("intents", StringType(), True),  
     StructField("uuid", StringType(), True),    
-    StructField("user_id", StringType(), True)  
+    StructField("user_id", StringType(), True) 
 ])
 
 main_schema = StructType([
     StructField("event_data", StringType(), True),  # JSON string of event data
     StructField("partition_id", StringType(), True),  
     StructField("offset", StringType(), True),  
-    StructField("sequence_number", StringType(), True)  # Sequence number of the event
+    StructField("sequence_number", StringType(), True),  # Sequence number of the event,
+    StructField("event_timestamp", TimestampType(), True)
+
 ])
 
 # Function to initialize the Azure Blob Storage client
@@ -56,7 +58,8 @@ def load_json_to_spark(json_files, main_schema, event_data_schema):
         df = df.select(
             col("event_data.intents"),
             col("event_data.uuid"),
-            col("event_data.user_id")
+            col("event_data.user_id"),
+            col("event_timestamp")
         )
         return df
     else:
@@ -70,7 +73,7 @@ def write_to_delta(df, container_name, blob_service_client, delta_path):
         delta_path = f"wasbs://{container_name}@{blob_service_client.account_name}.blob.core.windows.net/{delta_path}"
         
         # Write the DataFrame to Delta Lake format
-        df.write.format("delta").mode("overwrite").save(delta_path)
+        df.write.format("delta").option("mergeSchema", "true").mode("overwrite").save(delta_path)
         print("Data written to Delta successfully.")
     else:
         print("No data to write to Delta.")
