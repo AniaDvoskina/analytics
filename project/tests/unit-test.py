@@ -6,7 +6,7 @@ import random
 
 class TestSendEventsToHub(unittest.TestCase):
 
-    @patch('project.src.sendtohub.generate_random_user_id')  # Mock generate_random_user_id
+    @patch('project.src.send_to_hub.generate_random_user_id')  # Mock generate_random_user_id
     def test_enhance_dataframe_with_uuid_and_user_id(self, mock_generate_random_user_id):
         
         # Mock generate_random_user_id to return predictable user IDs
