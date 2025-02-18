@@ -27,17 +27,19 @@ jobs:
           pip install -r requirements.txt
 
       #  Install Java & Spark 
+      # Install Java & Spark
       - name: Install Java & Spark
         run: |
           sudo apt-get update
           sudo apt-get install -y openjdk-11-jdk  # Install Java 11
-          wget https://dlcdn.apache.org/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3.tgz
-          tar -xvzf spark-3.4.1-bin-hadoop3.tgz
-          sudo mv spark-3.4.1-bin-hadoop3 /opt/spark
+          wget https://dlcdn.apache.org/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3.2.tgz  # Make sure the URL is correct
+          tar -xvzf spark-3.4.1-bin-hadoop3.2.tgz
+          sudo mv spark-3.4.1-bin-hadoop3.2 /opt/spark
           echo "export SPARK_HOME=/opt/spark" >> ~/.bashrc
-          echo "export PATH=$SPARK_HOME/bin:$PATH" >> ~/.bashrc
+          echo "export PATH=\$SPARK_HOME/bin:\$PATH" >> ~/.bashrc
           echo "export PYSPARK_PYTHON=python3" >> ~/.bashrc
           source ~/.bashrc
+
 
       #  Install PySpark
       - name: Install PySpark
@@ -49,6 +51,7 @@ jobs:
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: |
           python -m unittest ./project/tests/unit-test.py
+          python -m unittest ./project/tests/test_schema_validation.py
     
   deploy:
     name: "Deploy bundle"
