@@ -51,10 +51,6 @@ def parse_data(df, intent_schema, out_schema):
     return df.withColumn("event_data_parsed", from_json(col("intents"), intent_schema)) \
         .withColumn("content_data_parsed", from_json(col("event_data_parsed.context"), out_schema))
 
-# Clean the data by filtering non-null UUID and removing duplicates
-def clean_data(df):
-    return df.filter(col("uuid").isNotNull()).drop_duplicates(["uuid"])
-
 def write_to_silver(df, container_name, blob_service_client, delta_silver_path):
     df.write.format("delta").option("mergeSchema", "true").mode("overwrite").save(delta_silver_path)
 
@@ -83,8 +79,6 @@ def process_data():
         col("event_data_parsed.entities").alias("entities"),
         col("content_data_parsed.out").alias("out")  # Extract 'out' field from 'context'
     )
-    
-    df_cleaned = clean_data(df_cleaned)
     
     delta_silver_path = f"wasbs://{container_name}@{blob_service_client.account_name}.blob.core.windows.net/silver/events"
     

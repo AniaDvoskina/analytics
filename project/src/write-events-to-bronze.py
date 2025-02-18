@@ -78,6 +78,9 @@ def write_to_delta(df, container_name, blob_service_client, delta_path):
     else:
         print("No data to write to Delta.")
 
+def clean_data(df):
+    return df.filter(col("uuid").isNotNull()).drop_duplicates(["uuid"])
+
 # Main function 
 def main():
     # Set up Blob Storage Client using the connection string
@@ -93,7 +96,7 @@ def main():
     json_files = get_blob_storage_files(container_client, raw_folder_path, container_name, blob_service_client)
 
     df = load_json_to_spark(json_files, main_schema, event_data_schema)
-
+    df = clean_data(df)
     delta_path = "bronze/events"
     write_to_delta(df, container_name, blob_service_client, delta_path)
 

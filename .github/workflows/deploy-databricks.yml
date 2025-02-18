@@ -36,7 +36,7 @@ jobs:
         env:
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}  # Pass the secret token here
         run: |
-          python -m unittest ./project/src/unit-test.py
+          python -m unittest ./project/tests/unit-test.py
     
   deploy:
     name: "Deploy bundle"

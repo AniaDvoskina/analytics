@@ -24,9 +24,9 @@ class TestSendEventsToHub(unittest.TestCase):
         self.assertIn('user_id', result_df.columns)
         
         # Check that user_id is now different for each row
-        self.assertEqual(result_df['user_id'].nunique(), len(result_df))  # This will pass now
+        self.assertEqual(result_df['user_id'].nunique(), len(result_df))  
         
-        # Ensure that uuid and user_id are unique
+        # Ensure that uuid are unique
         self.assertEqual(result_df['uuid'].nunique(), len(result_df))
 
 if __name__ == '__main__':
