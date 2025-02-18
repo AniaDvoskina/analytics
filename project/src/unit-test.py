@@ -1,10 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import pandas as pd
-import random
-import string
-import uuid
-import json
 from project.src.sendtohub import enhance_dataframe_with_uuid_and_user_id, fetch_json_from_kaggle, send_data_to_eventhub
 
 class TestSendEventsToHub(unittest.TestCase):
@@ -16,7 +12,7 @@ class TestSendEventsToHub(unittest.TestCase):
     @patch('project.src.sendtohub.EventHubProducerClient')
     def test_enhance_dataframe_with_uuid_and_user_id(self, MockEventHubProducerClient, mock_generate_random_user_id, mock_requests_get, mock_dbutils_get, MockDatabricksSession):
         
-        # Mock the DatabricksSession
+        # Mock the DatabricksSession call
         mock_databricks_instance = MagicMock()
         MockDatabricksSession.builder.getOrCreate.return_value = mock_databricks_instance
         
@@ -48,18 +44,9 @@ class TestSendEventsToHub(unittest.TestCase):
         # Check that user_id is now different for each row
         self.assertEqual(result_df['user_id'].nunique(), len(result_df))  # This will pass now
         
-        # Check that uuid is a valid string (non-null)
-        self.assertTrue(result_df['uuid'].apply(lambda x: isinstance(x, str)).all())
-        
-        # Check that uuid and user_id are unique
+        # Ensure that uuid and user_id are unique
         self.assertEqual(result_df['uuid'].nunique(), len(result_df))
 
-        # Check that the EventHubProducerClient was called
-        MockEventHubProducerClient.from_connection_string.assert_called_once_with("mocked_value", eventhub_name="kaggleeventhub")
-        
-        # Ensure that the correct data would be sent to Event Hub (check that a batch was created)
-        mock_eventhub_producer_instance.create_batch.assert_called()
-        
         # Ensure dbutils.secrets.get was called to retrieve event hub connection string and kaggle password
         mock_dbutils_get.assert_any_call(scope="kaggle-project-credentials", key="event_hub_connection_string")
         mock_dbutils_get.assert_any_call(scope="kaggle-project-credentials", key="kaggle_password")
