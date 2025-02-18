@@ -1,11 +1,7 @@
 name: "Dev deployment"
 
-# Ensure that only a single job or workflow using the same concurrency group
-# runs at a time.
 concurrency: 1
 
-# Trigger this workflow whenever a pull request is pushed to the repo's
-# main branch.
 on:
   push:
     branches:
@@ -17,24 +13,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Check out this repo, so that this workflow can access it.
-      - uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-      # Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'  # Specify the Python version here
+          python-version: '3.11'
 
-      # Install testing dependencies
       - name: Install test dependencies
         working-directory: ./project
         run: |
           pip install -r requirements.txt
 
+      #  Install Java & Spark 
+      - name: Install Java & Spark
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-11-jdk  # Install Java 11
+          wget https://dlcdn.apache.org/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3.tgz
+          tar -xvzf spark-3.4.1-bin-hadoop3.tgz
+          sudo mv spark-3.4.1-bin-hadoop3 /opt/spark
+          echo "export SPARK_HOME=/opt/spark" >> ~/.bashrc
+          echo "export PATH=$SPARK_HOME/bin:$PATH" >> ~/.bashrc
+          echo "export PYSPARK_PYTHON=python3" >> ~/.bashrc
+          source ~/.bashrc
+
+      #  Install PySpark
+      - name: Install PySpark
+        run: pip install pyspark
+
+      # Run Unit Tests
       - name: Run unit tests
         env:
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}  # Pass the secret token here
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: |
           python -m unittest ./project/tests/unit-test.py
     

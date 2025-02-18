@@ -12,21 +12,27 @@ blob_storage_connection_string = dbutils.secrets.get(scope="kaggle-project-crede
 container_name = "kaggle-pipeline"  
 raw_folder_path = "raw/"  
 
-# Schemas 
-event_data_schema = StructType([
-    StructField("intents", StringType(), True),  
-    StructField("uuid", StringType(), True),    
-    StructField("user_id", StringType(), True) 
-])
+#Schemas
+def get_event_data_schema():
+    return StructType([
+        StructField("intents", StringType(), True),  
+        StructField("uuid", StringType(), True),    
+        StructField("user_id", StringType(), True) 
+    ])
 
-main_schema = StructType([
-    StructField("event_data", StringType(), True),  # JSON string of event data
-    StructField("partition_id", StringType(), True),  
-    StructField("offset", StringType(), True),  
-    StructField("sequence_number", StringType(), True),  # Sequence number of the event,
-    StructField("event_timestamp", TimestampType(), True)
+def get_main_schema():
+    return StructType([
+        StructField("event_data", StringType(), True),  # JSON string of event data
+        StructField("partition_id", StringType(), True),  
+        StructField("offset", StringType(), True),  
+        StructField("sequence_number", StringType(), True),  # Sequence number of the event
+        StructField("event_timestamp", TimestampType(), True)
+    ])
 
-])
+# Function to load the JSON files into a Spark DataFrame
+def load_json_to_spark(json_files):
+    main_schema = get_main_schema()
+    event_data_schema = get_event_data_schema()
 
 # Function to initialize the Azure Blob Storage client
 def initialize_blob_client(connection_string):
@@ -95,7 +101,7 @@ def main():
     
     json_files = get_blob_storage_files(container_client, raw_folder_path, container_name, blob_service_client)
 
-    df = load_json_to_spark(json_files, main_schema, event_data_schema)
+    df = load_json_to_spark(json_files, main_schema=get_main_schema(), event_data_schema = get_event_data_schema())
     df = clean_data(df)
     delta_path = "bronze/events"
     write_to_delta(df, container_name, blob_service_client, delta_path)

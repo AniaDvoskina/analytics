@@ -9,14 +9,14 @@ resources:
         - task_key: events-to-hub
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
-            python_file: ./src/sendtohub.py
+            python_file: ./src/send_to_hub.py
     write-events-to-blob:
       name: Write Events To Blob
       tasks:
         - task_key: events-to-raw
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
-            python_file: ./src/write-events-to-raw.py
+            python_file: ./src/write_events_to_raw.py
             
         - task_key: events-to-bronze
           depends_on:
@@ -24,7 +24,7 @@ resources:
           run_if: ALL_DONE
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
-            python_file: ./src/write-events-to-bronze.py
+            python_file: ./src/write_events_to_bronze.py
 
         - task_key: events-to-silver
           depends_on:
@@ -32,7 +32,7 @@ resources:
           run_if: ALL_DONE
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
-            python_file: ./src/write-events-to-silver.py
+            python_file: ./src/write_events_to_silver.py
 
         - task_key: events-to-gold
           depends_on:
@@ -40,7 +40,7 @@ resources:
           run_if: ALL_DONE
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
-            python_file: ./src/write-events-to-gold.py
+            python_file: ./src/write_events_to_gold.py
 
 targets:
   dev:
