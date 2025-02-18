@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 from unittest.mock import patch
-from sendtohub import enhance_dataframe_with_uuid_and_user_id
+from project.src.sendtohub import enhance_dataframe_with_uuid_and_user_id
 import random
 
 class TestSendEventsToHub(unittest.TestCase):
