@@ -1,67 +1,98 @@
-from pyspark.sql import SparkSession
 from azure.storage.blob import BlobServiceClient
 from databricks.sdk import WorkspaceClient
 from databricks.connect import DatabricksSession
-from pyspark.sql.types import StructField, StructType, StringType, ArrayType, BooleanType, MapType
+from pyspark.sql.types import StructField, StructType, StringType
 from pyspark.sql.functions import col, from_json
 
-# Initialize Databricks and Spark
 spark = DatabricksSession.builder.getOrCreate()
 dbutils = WorkspaceClient().dbutils
 
-#Schemas
+# Azure Blob Storage Configuration: Access credentials and blob container details
+blob_storage_connection_string = dbutils.secrets.get(scope="kaggle-project-credentials", key="blob_storage_connection-string")
+container_name = "kaggle-pipeline"  
+raw_folder_path = "raw/"  
+
+# Schemas 
 event_data_schema = StructType([
     StructField("intents", StringType(), True),  
-    StructField("uuid", StringType(), True),
-    StructField("user_id", StringType(), True)
+    StructField("uuid", StringType(), True),    
+    StructField("user_id", StringType(), True)  
 ])
+
 main_schema = StructType([
-    StructField("event_data", StringType(), True),  
-    StructField("partition_id", StringType(), True),
-    StructField("offset", StringType(), True),
-    StructField("sequence_number", StringType(), True)
+    StructField("event_data", StringType(), True),  # JSON string of event data
+    StructField("partition_id", StringType(), True),  
+    StructField("offset", StringType(), True),  
+    StructField("sequence_number", StringType(), True)  # Sequence number of the event
 ])
 
-# Azure Blob Storage Configuration
-blob_storage_connection_string = dbutils.secrets.get(scope="kaggle-project-credentials", key="blob_storage_connection-string")
-container_name = "kaggle-pipeline"
-raw_folder_path = "raw/"
+# Function to initialize the Azure Blob Storage client
+def initialize_blob_client(connection_string):
+    return BlobServiceClient.from_connection_string(connection_string)
 
-# Set up Blob Storage Client
-blob_service_client = BlobServiceClient.from_connection_string(blob_storage_connection_string)
-container_client = blob_service_client.get_container_client(container_name)
+# Function to retrieve a list of JSON files from the Blob Storage container
+def get_blob_storage_files(container_client, raw_folder_path, container_name, blob_service_client):
+    print("Fetching file list from Blob Storage...")
+    # List all blobs in the specified folder path
+    blob_list = list(container_client.list_blobs(name_starts_with=raw_folder_path))  # Convert iterator to list
+    print(f"Total files found: {len(blob_list)}")
+    
+    # Filter to get only the JSON files
+    json_files = [
+        f"wasbs://{container_name}@{blob_service_client.account_name}.blob.core.windows.net/{blob.name}" 
+        for blob in blob_list if blob.name.endswith(".json")
+    ]
+    return json_files
 
-# Set Azure Blob Storage credentials for Spark
-spark.conf.set(
-    f"fs.azure.account.key.{blob_service_client.account_name}.blob.core.windows.net",
-    dbutils.secrets.get(scope="kaggle-project-credentials", key="blob_storage_key")
-)
+# Function to load the JSON files into a Spark DataFrame
+def load_json_to_spark(json_files, main_schema, event_data_schema):
+    if json_files:
+        df = spark.read.json(json_files, schema=main_schema)
+        
+        # Parse the 'event_data' field into its own structure
+        df = df.withColumn("event_data", from_json(col("event_data"), event_data_schema))
+        
+        # Select relevant columns (intents, uuid, and user_id)
+        df = df.select(
+            col("event_data.intents"),
+            col("event_data.uuid"),
+            col("event_data.user_id")
+        )
+        return df
+    else:
+        print("No JSON files found in Blob Storage.")
+        return None
 
-# List blobs in the container
-print("Fetching file list from Blob Storage...")
-blob_list = list(container_client.list_blobs(name_starts_with=raw_folder_path))  # Convert iterator to list
-print(f"Total files found: {len(blob_list)}")
+# Function to write the processed DataFrame to Delta Lake storage
+def write_to_delta(df, container_name, blob_service_client, delta_path):
+    if df:
+        # Construct the path to store the data in Delta format in Blob Storage
+        delta_path = f"wasbs://{container_name}@{blob_service_client.account_name}.blob.core.windows.net/{delta_path}"
+        
+        # Write the DataFrame to Delta Lake format
+        df.write.format("delta").mode("overwrite").save(delta_path)
+        print("Data written to Delta successfully.")
+    else:
+        print("No data to write to Delta.")
 
-# Get list of JSON file paths
-json_files = [
-    f"wasbs://{container_name}@{blob_service_client.account_name}.blob.core.windows.net/{blob.name}" 
-    for blob in blob_list if blob.name.endswith(".json")
-]
-# Load JSON files into Spark DataFrame
+# Main function 
+def main():
+    # Set up Blob Storage Client using the connection string
+    blob_service_client = initialize_blob_client(blob_storage_connection_string)
+    container_client = blob_service_client.get_container_client(container_name)
 
-if json_files:
-    print("Loading files into Spark DataFrame...")
-    df = spark.read.json(json_files, schema=main_schema)
-    df = df.withColumn("event_data", from_json(col("event_data"), event_data_schema))
-    df = df.select(
-    col("event_data.intents"),
-    col("event_data.uuid"),
-    col("event_data.user_id")
-)
+    # Set Azure Blob Storage credentials for Spark session to access Blob Storage
+    spark.conf.set(
+        f"fs.azure.account.key.{blob_service_client.account_name}.blob.core.windows.net",
+        dbutils.secrets.get(scope="kaggle-project-credentials", key="blob_storage_key")
+    )
+    
+    json_files = get_blob_storage_files(container_client, raw_folder_path, container_name, blob_service_client)
 
-    delta_path = f"wasbs://{container_name}@{blob_service_client.account_name}.blob.core.windows.net/bronze/events"
+    df = load_json_to_spark(json_files, main_schema, event_data_schema)
 
-    df.write.format("delta").mode("overwrite").save(delta_path)
+    delta_path = "bronze/events"
+    write_to_delta(df, container_name, blob_service_client, delta_path)
 
-else:
-    print("No JSON files found in Blob Storage.")
+if __name__ == "__main__":
+    main()

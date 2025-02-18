@@ -9,7 +9,7 @@ resources:
         - task_key: events-to-hub
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
-            python_file: ./src/send-events-to-hub.py
+            python_file: ./src/sendtohub.py
     write-events-to-blob:
       name: Write Events To Blob
       tasks:
