@@ -3,9 +3,24 @@ from databricks.sdk import WorkspaceClient
 from databricks.connect import DatabricksSession
 from pyspark.sql.types import StructField, StructType, StringType, TimestampType
 from pyspark.sql.functions import col, from_json
+import os
+from pyspark.sql import SparkSession
 
-spark = DatabricksSession.builder.getOrCreate()
-dbutils = WorkspaceClient().dbutils
+def get_spark_session():
+    # Check if we should use a local Spark session (e.g., for unit testing)
+    if os.getenv("USE_LOCAL_SPARK", "false").lower() == "true":
+        print("Using local Spark session")
+        return SparkSession.builder \
+            .master("local[*]") \
+            .appName("LocalTest") \
+            .getOrCreate()
+    else:
+        # When not in test mode, use Databricks Connect
+        from databricks.connect import DatabricksSession
+        return DatabricksSession.builder.getOrCreate()
+        dbutils = WorkspaceClient().dbutils
+
+spark = get_spark_session()
 
 # Azure Blob Storage Configuration: Access credentials and blob container details
 blob_storage_connection_string = dbutils.secrets.get(scope="kaggle-project-credentials", key="blob_storage_connection-string")

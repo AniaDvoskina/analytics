@@ -12,6 +12,7 @@ jobs:
     name: "Run unit tests"
     runs-on: ubuntu-latest
     env:
+      USE_LOCAL_SPARK: "true"
       DATABRICKS_HOST: "https://adb-1803686465879368.8.azuredatabricks.net/"
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
 
