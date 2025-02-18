@@ -30,6 +30,11 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      # Uninstall Databricks Connect to avoid conflicts
+      - name: Uninstall Databricks Connect
+        if: env.USE_LOCAL_SPARK == 'true'
+        run: pip uninstall -y databricks-connect
+        
       # Run Unit Tests
       - name: Run unit tests
         env:
