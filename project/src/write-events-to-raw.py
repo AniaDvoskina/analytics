@@ -8,9 +8,9 @@ spark = DatabricksSession.builder.getOrCreate()
 dbutils = WorkspaceClient().dbutils
 
 # Retrieve credentials
-event_hub_connection_string = dbutils.secrets.get(scope = "kaggle-project-credentials", key= "event_hub_connection_string")
+event_hub_connection_string = dbutils.secrets.get(scope="kaggle-project-credentials", key="event_hub_connection_string")
 event_hub_name = "kaggleeventhub"
-blob_storage_connection_string = dbutils.secrets.get(scope = "kaggle-project-credentials", key= "blob_storage_connection-string")
+blob_storage_connection_string = dbutils.secrets.get(scope="kaggle-project-credentials", key="blob_storage_connection-string")
 container_name = "kaggle-pipeline"
 consumer_group = "$Default"
 
@@ -35,24 +35,25 @@ def file_exists(blob_name, container_client):
     try:
         blob_client.get_blob_properties()
         return True  
-    except Exception as e:
+    except Exception:
         return False  
 
 # Event handler function for processing events from Event Hub
 def on_event(partition_context, event, container_client):
+    event_timestamp = event.enqueued_time.strftime("%Y-%m-%d %H:%M:%S")  # Convert to string format
+    load_date = event.enqueued_time.strftime("%Y-%m-%d_%H-%M-%S")  
+
     event_data = {
         "event_data": event.body_as_str(encoding="UTF-8"),
         "partition_id": partition_context.partition_id,
         "offset": event.offset,
         "sequence_number": event.sequence_number,
+        "event_timestamp": event_timestamp  
     }
-
-    event_timestamp = event.enqueued_time
-    load_date = event_timestamp.strftime("%Y-%m-%d_%H-%M-%S") 
 
     json_data = json.dumps(event_data) + "\n"
     sequence_number = event.sequence_number
-    
+
     # Generate the blob name using sequence number and load date
     blob_name = f"raw/event_{sequence_number}_{load_date}.json"
 

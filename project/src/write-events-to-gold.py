@@ -40,7 +40,6 @@ def set_spark_blob_storage_credentials(blob_service_client, dbutils):
 
 def read_delta_table(delta_path):
     df = spark.read.format("delta").load(delta_path)
-    df = df.withColumn("loaddate", current_timestamp())
     return df 
 
 # Function to write DataFrame to Unity Catalog as a Delta table
@@ -61,7 +60,7 @@ delta_path = f"wasbs://{container_name}@{blob_service_client.account_name}.blob.
 
 df = read_delta_table(delta_path)
 
-df = df.select("uuid", "user_id", "intent", "text", "responses", "out", "loaddate")
+df = df.select("uuid", "user_id", "intent", "text", "responses", "out", "event_timestamp")
 
 # Write the processed DataFrame to Unity catalog as Delta table
 write_table(df, unity_table_path, storage_path)
