@@ -40,7 +40,7 @@ jobs:
         run: |
           python -m unittest ./project/tests/unit-test.py
           python -m pytest ./project/tests/test_schema_validation.py
-          python -m pytest -s ./project/tests/test_clean_data.py
+          python -m pytest -s ./project/tests/clean_data_test.py
     
   deploy:
     name: "Deploy bundle"
