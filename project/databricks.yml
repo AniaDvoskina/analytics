@@ -10,6 +10,7 @@ resources:
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/send_to_hub.py
+            
     write-events-to-blob:
       name: Write Events To Blob
       tasks:
@@ -17,15 +18,15 @@ resources:
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/write_events_to_raw.py
-            
+
+    write-events-to-delta:
+      name: Write Events To Delta
+      tasks: 
         - task_key: events-to-bronze
-          depends_on:
-            - task_key: events-to-raw
-          run_if: ALL_DONE
           existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/write_events_to_bronze.py
-
+            
         - task_key: events-to-silver
           depends_on:
             - task_key: events-to-bronze
