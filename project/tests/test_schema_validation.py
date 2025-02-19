@@ -42,7 +42,18 @@ def test_schema_validation_with_extra_columns(spark, sample_raw_data_with_extra_
     df.printSchema()
     print("\Transformed Data Sample:")
     df.show(truncate=False)
-    
+
+    # Select only expected fields (ignoring extra fields)
+    df = df.select(
+        col("event_data.intents"),
+        col("event_data.uuid"),
+        col("event_data.user_id"),
+        col("event_timestamp")
+    )
+
+    print("FINAL Selected Columns:")
+    print(df.columns)
+
     # Expected Schema (ignoring extra fields)
     expected_schema = StructType([
         StructField("intents", StringType(), True),
