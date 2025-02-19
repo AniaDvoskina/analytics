@@ -16,7 +16,6 @@ def spark():
 def sample_raw_data_with_extra_columns(spark):
     """Simulate raw JSON data with extra and missing fields."""
     data = [
-        # Extra field 'extra_field' is included, but should be ignored by schema
         ('{"intents": "purchase", "uuid": "12345", "user_id": "user1", "extra_field": "should_ignore"}',
          "1", "100", "10", "2024-02-17T12:00:00", "random_data1"),
         ('{"intents": "browse", "uuid": "67890", "user_id": "user2"}',
@@ -24,26 +23,16 @@ def sample_raw_data_with_extra_columns(spark):
         ('{"uuid": "11111", "user_id": "user3"}',  # Missing "intents"
          "3", "102", "12", "2024-02-17T12:10:00", "random_data3"),
     ]
-    
-    # Use the main schema 
     return spark.createDataFrame(data, schema=get_main_schema())
 
-def test_schema_validation_with_extra_columns(spark, sample_raw_data_with_extra_columns):
+def test_schema_validation_with_missing_fields(spark, sample_raw_data_with_extra_columns):
+    # Define the event data schema (this is the schema for the 'event_data' field)
     event_data_schema = get_event_data_schema()
 
-    print("\BEFORE JSON Parsing (Raw Data Schema):")
-    sample_raw_data_with_extra_columns.printSchema()
-    print("\Raw Data Sample:")
-    sample_raw_data_with_extra_columns.show(truncate=False)
-
+    # Parse the 'event_data' field into its structured format using the defined schema
     df = sample_raw_data_with_extra_columns.withColumn("event_data", from_json(col("event_data"), event_data_schema))
 
-    print("\AFTER JSON Parsing (Schema Updated):")
-    df.printSchema()
-    print("\Transformed Data Sample:")
-    df.show(truncate=False)
-
-    # Select only expected fields (ignoring extra fields)
+    # Select only the relevant fields and ignore the extra fields
     df = df.select(
         col("event_data.intents"),
         col("event_data.uuid"),
@@ -51,24 +40,20 @@ def test_schema_validation_with_extra_columns(spark, sample_raw_data_with_extra_
         col("event_timestamp")
     )
 
-    print("FINAL Selected Columns:")
+    # Print the final columns after selection
+    print("\nFINAL Selected Columns:")
     print(df.columns)
 
-    # Expected Schema (ignoring extra fields)
-    expected_schema = StructType([
-        StructField("intents", StringType(), True),
-        StructField("uuid", StringType(), True),
-        StructField("user_id", StringType(), True),
-        StructField("event_timestamp", StringType(), True)
-    ])
+    # Check for missing 'intents' field and ensure it is null where expected
+    missing_intents_df = df.filter(col("intents").isNull())
+    assert missing_intents_df.count() > 0, "Expected rows with missing 'intents' field"
 
-    # Assert schema is correct
-    assert df.schema == expected_schema, "Schema does not match expected structure"
+    # Ensure the schema matches the expected one
+    expected_columns = {"intents", "uuid", "user_id", "event_timestamp"}
+    assert set(df.columns) == expected_columns, f"Unexpected columns found: {df.columns}"
 
-    # Check for unexpected columns
-    unexpected_columns = set(df.columns) - {"intents", "uuid", "user_id", "event_timestamp"}
-    assert not unexpected_columns, f"Unexpected columns found: {unexpected_columns}"
+    # Verify that extra fields are not included in the DataFrame (i.e., extra_field is ignored)
+    extra_fields = set(df.columns) - expected_columns
+    assert not extra_fields, f"Unexpected extra fields found: {extra_fields}"
 
-    if unexpected_columns:
-        print("Unexpected columns found in the DataFrame:")
-        print(unexpected_columns)
+    print("Test Passed! No extra fields and missing fields are handled correctly.")

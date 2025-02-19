@@ -23,11 +23,11 @@ spark = get_spark_session()
 # Set up a dummy dbutils if using local Spark, otherwise use the real one.
 if os.getenv("USE_LOCAL_SPARK", "false").lower() == "true":
     print("Using dummy dbutils for local testing")
-    # In local mode, you might fetch secrets from environment variables.
+
     class DummySecrets:
         @staticmethod
         def get(scope, key):
-            # For example, return the value from an environment variable (or hard-code dummy values)
+
             return os.getenv(key, f"dummy_{key}")
     class DummyDBUtils:
         secrets = DummySecrets()
