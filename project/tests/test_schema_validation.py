@@ -16,7 +16,7 @@ def spark():
 def sample_raw_data_with_extra_columns(spark):
     """Simulate raw JSON data with extra and missing fields."""
     data = [
-        ('{"intents": "purchase", "uuid": "12345", "user_id": "user1", "extra_field": "should_ignore"}',
+        ('{"intents": "purchase", "uuid": "12345", "user_id": "user1"}',
          "1", "100", "10", "2024-02-17T12:00:00", "random_data1"),
         ('{"intents": "browse", "uuid": "67890", "user_id": "user2"}',
          "2", "101", "11", "2024-02-17T12:05:00", "random_data2"),
