@@ -59,11 +59,18 @@ jobs:
       # Download the Databricks CLI
       
       - uses: databricks/setup-cli@main
+      
       - name: Replace Placeholders
+        env:
+          DB_CLUSTER: ${{ secrets.DB_CLUSTER }}
+          DB_HOST: ${{ secrets.SP_HOST }}
         run: |
-          sed -i 's|{{DB_CLUSTER_PLACEHOLDER}}|${{ secrets.DB_CLUSTER }}|g' databricks.yml
-          sed -i 's|{{DB_HOST_PLACEHOLDER}}|${{ secrets.SP_HOST }}|g' databricks.yml
+          sed -i "s|{{DB_CLUSTER_PLACEHOLDER}}|$DB_CLUSTER|g" project/databricks.yml
+          sed -i "s|{{DB_HOST_PLACEHOLDER}}|$DB_HOST|g" project/databricks.yml
 
+      - name: Debug Placeholder Replacement
+        run: cat project/databricks.yml
+  
       # Deploy the bundle to the "prod" target as defined
       # in the bundle's settings file.
       - run: databricks bundle deploy
