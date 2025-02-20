@@ -65,8 +65,8 @@ jobs:
           DB_CLUSTER: ${{ secrets.DB_CLUSTER }}
           DB_HOST: ${{ secrets.SP_HOST }}
         run: | 
-          sed -i 's|{{DB_CLUSTER_PLACEHOLDER}}|${{ secrets.DB_CLUSTER }}|g' project/databricks.yml
-          sed -i 's|{{DB_HOST_PLACEHOLDER}}|${{ secrets.SP_HOST }}|g' project/databricks.yml
+          sed -i 's|DB_CLUSTER_PLACEHOLDER|${{ secrets.DB_CLUSTER }}|g' project/databricks.yml
+          sed -i 's|DB_HOST_PLACEHOLDER|${{ secrets.SP_HOST }}|g' project/databricks.yml
 
       - name: Debug Placeholder Replacement
         run: cat project/databricks.yml
