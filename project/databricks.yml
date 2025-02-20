@@ -46,4 +46,4 @@ resources:
 targets:
   dev:
     workspace:
-      host: DB_HOST_PLACEHOLDER}
+      host: DB_HOST_PLACEHOLDER
