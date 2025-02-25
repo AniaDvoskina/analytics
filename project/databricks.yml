@@ -7,7 +7,7 @@ resources:
       name: Send Events To Hub
       tasks:
         - task_key: events-to-hub
-          existing_cluster_id: DB_CLUSTER_PLACEHOLDER
+          existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/send_to_hub.py
             
@@ -15,7 +15,7 @@ resources:
       name: Write Events To Blob
       tasks:
         - task_key: events-to-raw
-          existing_cluster_id: DB_CLUSTER_PLACEHOLDER
+          existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/write_events_to_raw.py
 
@@ -23,7 +23,7 @@ resources:
       name: Write Events To Delta
       tasks: 
         - task_key: events-to-bronze
-          existing_cluster_id: DB_CLUSTER_PLACEHOLDER
+          existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/write_events_to_bronze.py
             
@@ -31,7 +31,7 @@ resources:
           depends_on:
             - task_key: events-to-bronze
           run_if: ALL_DONE
-          existing_cluster_id: DB_CLUSTER_PLACEHOLDER
+          existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/write_events_to_silver.py
 
@@ -39,11 +39,11 @@ resources:
           depends_on:
             - task_key: events-to-silver
           run_if: ALL_DONE
-          existing_cluster_id: DB_CLUSTER_PLACEHOLDER
+          existing_cluster_id: "0216-153450-gm1l62l6"
           spark_python_task:
             python_file: ./src/write_events_to_gold.py
 
 targets:
   dev:
     workspace:
-      host: DB_HOST_PLACEHOLDER
+      host: "https://adb-1803686465879368.8.azuredatabricks.net"
